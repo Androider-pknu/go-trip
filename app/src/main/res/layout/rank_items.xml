@@ -6,6 +6,7 @@
     android:layout_height="wrap_content">
 
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/rank_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/rank_border"
@@ -46,16 +47,37 @@
             app:layout_constraintStart_toStartOf="@+id/rank_nickname"
             app:layout_constraintTop_toBottomOf="@+id/rank_nickname" />
 
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/text_box"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="15dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@+id/rank_profile_img"
+            app:layout_constraintTop_toBottomOf="@+id/rank_profile_img">
+
+            <TextView
+                android:id="@+id/rank_post_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="#000000"
+                android:textSize="15sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
         <ImageView
             android:id="@+id/rank_post_img"
             android:layout_width="100dp"
             android:layout_height="100dp"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="5dp"
             android:layout_marginBottom="10dp"
             android:scaleType="fitCenter"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="@+id/rank_profile_img"
-            app:layout_constraintTop_toBottomOf="@+id/rank_profile_img"
+            app:layout_constraintTop_toBottomOf="@+id/text_box"
             app:srcCompat="@drawable/mountain" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

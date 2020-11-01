@@ -6,4 +6,5 @@
     <color name="cursorColor">#D4FFA2</color>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
+    <color name="gray">#E35656</color>
 </resources>

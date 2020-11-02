@@ -24,17 +24,24 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.clustering.ClusterManager
 import com.oaojjj.go_trip.R
+import com.oaojjj.go_trip.map.marker.MyItem
+import kotlinx.android.synthetic.main.fragment_maps.*
 
 
 class MapsFragment : Fragment() {
+    private val PERM_FLAG = 99
+    private val permissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+
     private lateinit var mMap: GoogleMap
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback     // 위치 콜백
     private var initMap = true
 
-    val permissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
-    val PERM_FLAG = 99
+    private lateinit var mClusterManager: ClusterManager<MyItem>
+    private lateinit var mLocation: LatLng
+
 
     @SuppressLint("MissingPermission")
     // Callback
@@ -46,13 +53,45 @@ class MapsFragment : Fragment() {
         mMap.uiSettings.isMyLocationButtonEnabled = false
 
         setUpdateLocationListener()
+
+        mClusterManager = ClusterManager(requireContext(), mMap)
+        mMap.setOnCameraIdleListener(mClusterManager)
+        mMap.setOnMarkerClickListener(mClusterManager)
+
+        markerClickListener()
+        addItem()
     }
+
+    // 마커 클릭 리스너
+    private fun markerClickListener(){
+        mClusterManager.setOnClusterItemClickListener {
+            mMap.moveCamera(CameraUpdateFactory.newLatLng
+                (LatLng(it.position.latitude, it.position.longitude)))
+            mMap.animateCamera(CameraUpdateFactory.zoomTo(15.0f))
+            return@setOnClusterItemClickListener true
+        }
+    }
+
+    private fun addItem(){  // 마커 추가
+        var lat = 37.2000
+        var lng = 127.103021930129409
+
+        for (i in 1..10){
+            val offset = i/ 60.toDouble()
+            lat += offset
+            lng += offset
+            val offsetItem = MyItem(lat,lng)
+            mClusterManager.addItem(offsetItem)
+        }
+    }
+
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_maps, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        map_cursor.visibility = View.VISIBLE
         super.onViewCreated(view, savedInstanceState)
         if(isPermitted()){
             startProcess()
@@ -94,6 +133,7 @@ class MapsFragment : Fragment() {
 
     private fun initLocation(location: Location){
         val myLocation = LatLng(location.latitude, location.longitude)
+        mLocation = myLocation
         val cameraOption = CameraPosition.Builder()
             .target(myLocation)
             .zoom(15.0f)

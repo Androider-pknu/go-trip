@@ -26,8 +26,11 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.clustering.ClusterManager
 import com.oaojjj.go_trip.R
+import com.oaojjj.go_trip.map.marker.CardViewModel
+import com.oaojjj.go_trip.map.marker.MapPagerFragmentStateAdapter
 import com.oaojjj.go_trip.map.marker.MyItem
 import kotlinx.android.synthetic.main.fragment_maps.*
+import kotlinx.android.synthetic.main.fragment_maps.view.*
 
 
 class MapsFragment : Fragment() {
@@ -41,7 +44,27 @@ class MapsFragment : Fragment() {
 
     private lateinit var mClusterManager: ClusterManager<MyItem>
     private lateinit var mLocation: LatLng
+    private lateinit var cardViewAdapter: MapPagerFragmentStateAdapter
+    private lateinit var cardViewList: ArrayList<CardViewModel>
 
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        return inflater.inflate(R.layout.fragment_maps, container, false)
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        setCardViewList()
+        map_cursor.visibility = View.VISIBLE
+        super.onViewCreated(view, savedInstanceState)
+        if(isPermitted()){
+            startProcess()
+            view.vp_map_cardview.adapter = cardViewAdapter
+            view.vp_map_cardview.clipToPadding = false
+            view.vp_map_cardview.setPadding(20, 0, 20, 0)
+        }
+        else{   // 권한이 없으면 권한 요청
+            ActivityCompat.requestPermissions(requireActivity(),permissions, PERM_FLAG)
+        }
+    }
 
     @SuppressLint("MissingPermission")
     // Callback
@@ -72,7 +95,7 @@ class MapsFragment : Fragment() {
         }
     }
 
-    private fun addItem(){  // 마커 추가
+    private fun addItem(){  //  임시 마커 추가
         var lat = 37.2000
         var lng = 127.103021930129409
 
@@ -80,25 +103,20 @@ class MapsFragment : Fragment() {
             val offset = i/ 60.toDouble()
             lat += offset
             lng += offset
-            val offsetItem = MyItem(lat,lng)
+            val offsetItem = MyItem(lat, lng)
             mClusterManager.addItem(offsetItem)
         }
     }
 
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.fragment_maps, container, false)
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        map_cursor.visibility = View.VISIBLE
-        super.onViewCreated(view, savedInstanceState)
-        if(isPermitted()){
-            startProcess()
-        }
-        else{   // 권한이 없으면 권한 요청
-            ActivityCompat.requestPermissions(requireActivity(),permissions, PERM_FLAG)
-        }
+    private fun setCardViewList(){      // 임시 카드뷰 데이터
+        cardViewAdapter = MapPagerFragmentStateAdapter()
+        cardViewAdapter.addItem(
+            CardViewModel(R.drawable.common_google_signin_btn_icon_dark, "이학진", "경남 창원시 성산구")
+        )
+        cardViewAdapter.addItem(
+            CardViewModel(R.drawable.common_google_signin_btn_icon_light, "임종윤", "울산 북구 어디서...")
+        )
+        cardViewAdapter.notifyDataSetChanged()
     }
 
     // 내위치를 가져옴

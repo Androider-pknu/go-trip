@@ -6,10 +6,13 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
+import android.view.Gravity
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.LinearLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.oaojjj.go_trip.R
@@ -41,6 +44,7 @@ class MakingPostFragment : Fragment() {
         }
         else{
             var intent = Intent(Intent.ACTION_PICK)
+            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
             intent.data = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
             // MediaStore 은 안드로이드에서 외부 저장소를 관리하는 DB. 외부 저장소에 파일을 저장하기 위해서는
             // MediaStore 을 통해서만 가능.
@@ -53,7 +57,18 @@ class MakingPostFragment : Fragment() {
         super.onActivityResult(requestCode, resultCode, data)
         if(resultCode == Activity.RESULT_OK){
             val uri = data?.data
-            rootView!!.test_img.setImageURI(uri)
+//            rootView!!.test_img.setImageURI(uri)
+            Log.d("Test",uri.toString())
+            rootView!!.make_post_img_layout.layoutParams.height = (rootView!!.big_layout.height - rootView!!.eText_post.height
+                    - rootView!!.eText_info_location.height - 10)/2
+
+            val layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT,4.toFloat())
+            val picture = ImageView(requireContext())
+            picture.setImageURI(uri)
+            layoutParams.gravity = Gravity.CENTER
+            picture.scaleType = ImageView.ScaleType.CENTER_CROP
+            picture.layoutParams = layoutParams
+            rootView!!.make_post_img_layout.addView(picture)
         }
     }
 }

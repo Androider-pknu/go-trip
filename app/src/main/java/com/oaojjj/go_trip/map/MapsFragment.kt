@@ -8,6 +8,7 @@ import androidx.fragment.app.Fragment
 
 import android.os.Bundle
 import android.os.Looper
+import android.util.DisplayMetrics
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -16,6 +17,7 @@ import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
+import androidx.viewpager2.widget.MarginPageTransformer
 import com.google.android.gms.location.*
 
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -28,12 +30,11 @@ import com.google.maps.android.clustering.ClusterManager
 import com.oaojjj.go_trip.R
 import com.oaojjj.go_trip.map.marker.CardViewModel
 import com.oaojjj.go_trip.map.marker.MapPagerFragmentStateAdapter
-import com.oaojjj.go_trip.map.marker.MyItem
+import com.oaojjj.go_trip.map.marker.MarkerMyItem
 import kotlinx.android.synthetic.main.fragment_maps.*
-import kotlinx.android.synthetic.main.fragment_maps.view.*
 
 
-class MapsFragment : Fragment() {
+class MapsFragment : Fragment(){
     private val PERM_FLAG = 99
     private val permissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
 
@@ -42,29 +43,36 @@ class MapsFragment : Fragment() {
     private lateinit var locationCallback: LocationCallback     // 위치 콜백
     private var initMap = true
 
-    private lateinit var mClusterManager: ClusterManager<MyItem>
+    private lateinit var mClusterManager: ClusterManager<MarkerMyItem>
     private lateinit var mLocation: LatLng
     private lateinit var cardViewAdapter: MapPagerFragmentStateAdapter
-    private lateinit var cardViewList: ArrayList<CardViewModel>
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_maps, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        setCardViewList()
-        map_cursor.visibility = View.VISIBLE
         super.onViewCreated(view, savedInstanceState)
         if(isPermitted()){
             startProcess()
-            view.vp_map_cardview.adapter = cardViewAdapter
-            view.vp_map_cardview.clipToPadding = false
-            view.vp_map_cardview.setPadding(20, 0, 20, 0)
+            vp_map_cardview.adapter = cardViewAdapter
+            // 좌/우 노출되는 크기를 크게하려면 offsetPx 증가
+            val offsetPx = 30.dpToPx(resources.displayMetrics)
+            vp_map_cardview.setPadding(offsetPx, offsetPx, offsetPx, offsetPx)
+
+            // 페이지간 마진 크게하려면 pageMarginPx 증가
+            val pageMarginPx = 5.dpToPx(resources.displayMetrics)
+            val marginTransformer = MarginPageTransformer(pageMarginPx)
+            vp_map_cardview.setPageTransformer(marginTransformer)
+
+            vp_map_cardview.offscreenPageLimit = 2
         }
         else{   // 권한이 없으면 권한 요청
             ActivityCompat.requestPermissions(requireActivity(),permissions, PERM_FLAG)
         }
     }
+
+    private fun Int.dpToPx(displayMetrics: DisplayMetrics): Int = (this * displayMetrics.density).toInt()
 
     @SuppressLint("MissingPermission")
     // Callback
@@ -74,13 +82,11 @@ class MapsFragment : Fragment() {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
         mMap.isMyLocationEnabled = true
         mMap.uiSettings.isMyLocationButtonEnabled = false
-
-        setUpdateLocationListener()
-
         mClusterManager = ClusterManager(requireContext(), mMap)
         mMap.setOnCameraIdleListener(mClusterManager)
         mMap.setOnMarkerClickListener(mClusterManager)
 
+        setUpdateLocationListener()
         markerClickListener()
         addItem()
     }
@@ -91,8 +97,13 @@ class MapsFragment : Fragment() {
             mMap.moveCamera(CameraUpdateFactory.newLatLng
                 (LatLng(it.position.latitude, it.position.longitude)))
             mMap.animateCamera(CameraUpdateFactory.zoomTo(15.0f))
+            addCardView(it)
             return@setOnClusterItemClickListener true
         }
+    }
+
+    private fun addCardView(markerItem: MarkerMyItem){
+
     }
 
     private fun addItem(){  //  임시 마커 추가
@@ -103,7 +114,7 @@ class MapsFragment : Fragment() {
             val offset = i/ 60.toDouble()
             lat += offset
             lng += offset
-            val offsetItem = MyItem(lat, lng)
+            val offsetItem = MarkerMyItem(lat, lng)
             mClusterManager.addItem(offsetItem)
         }
     }
@@ -111,10 +122,13 @@ class MapsFragment : Fragment() {
     private fun setCardViewList(){      // 임시 카드뷰 데이터
         cardViewAdapter = MapPagerFragmentStateAdapter()
         cardViewAdapter.addItem(
-            CardViewModel(R.drawable.common_google_signin_btn_icon_dark, "이학진", "경남 창원시 성산구")
+            CardViewModel(R.drawable.koreanfood_basic, "이학진", "경남 창원시 성산구")
         )
         cardViewAdapter.addItem(
             CardViewModel(R.drawable.common_google_signin_btn_icon_light, "임종윤", "울산 북구 어디서...")
+        )
+        cardViewAdapter.addItem(
+            CardViewModel(R.drawable.koreanfood_basic, "김영민", "김해 북구 어디서...")
         )
         cardViewAdapter.notifyDataSetChanged()
     }
@@ -173,11 +187,13 @@ class MapsFragment : Fragment() {
     private fun startProcess(){
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
         mapFragment?.getMapAsync(callback)
+        setCardViewList()   // cardView Set
+        map_cursor.visibility = View.VISIBLE
+        vp_map_cardview.visibility = View.VISIBLE
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-
         when(requestCode){
             PERM_FLAG -> {
                 var check = true

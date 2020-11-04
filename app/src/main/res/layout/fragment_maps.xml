@@ -39,12 +39,19 @@
 
         <androidx.viewpager2.widget.ViewPager2
             android:id="@+id/vp_map_cardview"
-            android:layout_width="270dp"
+            android:layout_width="320dp"
             android:layout_height="220dp"
             android:layout_gravity="center"
+            android:clipToPadding="false"
+            android:clipChildren = "false"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent">
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
         </androidx.viewpager2.widget.ViewPager2>
     </androidx.constraintlayout.widget.ConstraintLayout>
 

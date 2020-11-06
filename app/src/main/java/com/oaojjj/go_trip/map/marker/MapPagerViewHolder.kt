@@ -8,6 +8,5 @@ import com.oaojjj.go_trip.R
 
 class MapPagerViewHolder (itemView: View): RecyclerView.ViewHolder(itemView){
     val pImg: ImageView = itemView.findViewById<ImageView>(R.id.imageView_map_cardview)
-    val pName: TextView = itemView.findViewById<TextView>(R.id.tv_map_cardview_pname)
-    val pLocation: TextView = itemView.findViewById<TextView>(R.id.tv_map_cardview_plocation)
+    val pContent: TextView = itemView.findViewById<TextView>(R.id.tv_map_cardview_pcontent)
 }

@@ -39,7 +39,7 @@
             </ImageView>
 
             <TextView
-                android:id="@+id/tv_map_cardview_pname"
+                android:id="@+id/tv_map_cardview_pcontent"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
@@ -48,24 +48,10 @@
                 android:layout_marginStart="8dp"
                 android:text="방문한 장소 이름"
                 android:textSize="12sp"
+                android:maxLines="3"
                 app:layout_constraintTop_toBottomOf="@+id/imageView_map_cardview"
                 app:layout_constraintStart_toStartOf="parent"
                 tools:layout_editor_absoluteX="8dp">
-
-            </TextView>
-
-            <TextView
-                android:id="@+id/tv_map_cardview_plocation"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="16dp"
-                android:text="방문한 장소 위치"
-                android:textSize="12sp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/tv_map_cardview_pname">
 
             </TextView>
 

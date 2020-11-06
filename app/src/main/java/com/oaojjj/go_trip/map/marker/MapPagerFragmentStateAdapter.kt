@@ -18,11 +18,13 @@ class MapPagerFragmentStateAdapter(): RecyclerView.Adapter<MapPagerViewHolder>()
         return itemList.size
     }
 
+    fun removeItem(){
+        itemList.clear()
+    }
+
     override fun onBindViewHolder(holder: MapPagerViewHolder, position: Int) {
-//        holder.pImg.setImageResource(R.drawable.common_google_signin_btn_icon_dark)
         holder.pImg.setImageResource(itemList[position].img)
-        holder.pName.text = itemList[position].pName
-        holder.pLocation.text = itemList[position].pLocation
+        holder.pContent.text = itemList[position].pContent
     }
 
     fun addItem(item: CardViewModel){

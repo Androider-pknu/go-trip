@@ -31,10 +31,16 @@ import com.oaojjj.go_trip.R
 import com.oaojjj.go_trip.map.marker.CardViewModel
 import com.oaojjj.go_trip.map.marker.MapPagerFragmentStateAdapter
 import com.oaojjj.go_trip.map.marker.MarkerMyItem
+import com.oaojjj.go_trip.model.PostDTO
+import com.oaojjj.go_trip.util.AWSRetrofit
+import com.oaojjj.go_trip.util.RetrofitAPI
 import kotlinx.android.synthetic.main.fragment_maps.*
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 
-class MapsFragment : Fragment(){
+class MapsFragment : Fragment(), GoogleMap.OnMapClickListener{
     private val PERM_FLAG = 99
     private val permissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
 
@@ -45,7 +51,8 @@ class MapsFragment : Fragment(){
 
     private lateinit var mClusterManager: ClusterManager<MarkerMyItem>
     private lateinit var mLocation: LatLng
-    private lateinit var cardViewAdapter: MapPagerFragmentStateAdapter
+    private var cardViewAdapter =  MapPagerFragmentStateAdapter()
+    private var userPostList = ArrayList<PostDTO>()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_maps, container, false)
@@ -53,18 +60,17 @@ class MapsFragment : Fragment(){
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        if(isPermitted()){
+        if(isPermitted()){  // 권한이 승인되면 MAP 보여줌
             startProcess()
             vp_map_cardview.adapter = cardViewAdapter
-            // 좌/우 노출되는 크기를 크게하려면 offsetPx 증가
-            val offsetPx = 30.dpToPx(resources.displayMetrics)
+
+            // cardview design 설정
+            val offsetPx = 30.dpToPx(resources.displayMetrics)   // 좌/우 노출되는 크기를 크게하려면 offsetPx 증가
             vp_map_cardview.setPadding(offsetPx, offsetPx, offsetPx, offsetPx)
 
-            // 페이지간 마진 크게하려면 pageMarginPx 증가
-            val pageMarginPx = 5.dpToPx(resources.displayMetrics)
+            val pageMarginPx = 5.dpToPx(resources.displayMetrics)   // 페이지간 마진 크게하려면 pageMarginPx 증가
             val marginTransformer = MarginPageTransformer(pageMarginPx)
             vp_map_cardview.setPageTransformer(marginTransformer)
-
             vp_map_cardview.offscreenPageLimit = 2
         }
         else{   // 권한이 없으면 권한 요청
@@ -74,21 +80,44 @@ class MapsFragment : Fragment(){
 
     private fun Int.dpToPx(displayMetrics: DisplayMetrics): Int = (this * displayMetrics.density).toInt()
 
+    private fun getPostList(){  // Marker 에 찍을 Post List 가져옴
+        val userId = 2  // 임시로 userID SET
+        val retrofitAPI = AWSRetrofit.getAPI()
+        val call = retrofitAPI.getPostList(userId)
+
+        call.enqueue(object : Callback<List<PostDTO>> {
+            override fun onFailure(call: Call<List<PostDTO>>, t: Throwable) {
+                Log.d("MapGetPost", "GET POST FAI")
+                Log.d("MapGetPost", t.message.toString())
+            }
+
+            override fun onResponse(call: Call<List<PostDTO>>, response: Response<List<PostDTO>>) {
+                if(response.isSuccessful){
+                    Log.d("MapGetPostSuccess", "GET POST SUCCESS\n, ${response.body()}")
+                    addItem(response.body() as ArrayList<PostDTO>)
+                }
+            }
+
+        })
+
+    }
+
     @SuppressLint("MissingPermission")
     // Callback
     private val callback = OnMapReadyCallback { googleMap ->
         mMap = googleMap
+        mMap.setOnMapClickListener(this)
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
         mMap.isMyLocationEnabled = true
         mMap.uiSettings.isMyLocationButtonEnabled = false
-        mClusterManager = ClusterManager(requireContext(), mMap)
+        mClusterManager = ClusterManager(requireContext(), mMap)    // 클러스터 매니저 등록
         mMap.setOnCameraIdleListener(mClusterManager)
         mMap.setOnMarkerClickListener(mClusterManager)
 
-        setUpdateLocationListener()
-        markerClickListener()
-        addItem()
+        setUpdateLocationListener()     // 내위치 자동업데이트
+        markerClickListener()           // 마커 클릭 리스너
+        getPostList()   // PostList 받음
     }
 
     // 마커 클릭 리스너
@@ -102,36 +131,28 @@ class MapsFragment : Fragment(){
         }
     }
 
-    private fun addCardView(markerItem: MarkerMyItem){
-
-    }
-
-    private fun addItem(){  //  임시 마커 추가
-        var lat = 37.2000
-        var lng = 127.103021930129409
-
-        for (i in 1..10){
-            val offset = i/ 60.toDouble()
-            lat += offset
-            lng += offset
-            val offsetItem = MarkerMyItem(lat, lng)
-            mClusterManager.addItem(offsetItem)
+    private fun addCardView(markerItem: MarkerMyItem){      // 찍은 마커에 대한 정보를 가지고 카드뷰 data set
+        cardViewAdapter.removeItem()
+        vp_map_cardview.visibility = View.VISIBLE
+        for (postItem in userPostList){
+            // marker 의 위치를 이용해 cardView data set
+            if(postItem.latitude == markerItem.position.latitude &&
+                    postItem.longitude == markerItem.position.longitude){
+                cardViewAdapter.addItem(CardViewModel(R.drawable.koreanfood_basic, postItem.content))
+            }
         }
-    }
-
-    private fun setCardViewList(){      // 임시 카드뷰 데이터
-        cardViewAdapter = MapPagerFragmentStateAdapter()
-        cardViewAdapter.addItem(
-            CardViewModel(R.drawable.koreanfood_basic, "이학진", "경남 창원시 성산구")
-        )
-        cardViewAdapter.addItem(
-            CardViewModel(R.drawable.common_google_signin_btn_icon_light, "임종윤", "울산 북구 어디서...")
-        )
-        cardViewAdapter.addItem(
-            CardViewModel(R.drawable.koreanfood_basic, "김영민", "김해 북구 어디서...")
-        )
         cardViewAdapter.notifyDataSetChanged()
     }
+
+  private fun addItem(postList: ArrayList<PostDTO>){  //  마커 추가
+      userPostList = postList  // userPostList 에게 postList 대입입
+      for(location in postList){
+          val lat = location.latitude
+          val lng = location.longitude
+          val markerItem = MarkerMyItem(lat, lng)
+          mClusterManager.addItem(markerItem)   // ClusterManager 에게 marker 추가
+      }
+  }
 
     // 내위치를 가져옴
     @SuppressLint("MissingPermission")
@@ -187,9 +208,7 @@ class MapsFragment : Fragment(){
     private fun startProcess(){
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
         mapFragment?.getMapAsync(callback)
-        setCardViewList()   // cardView Set
         map_cursor.visibility = View.VISIBLE
-        vp_map_cardview.visibility = View.VISIBLE
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -210,5 +229,10 @@ class MapsFragment : Fragment(){
                 }
             }
         }
+    }
+
+    override fun onMapClick(p0: LatLng?) {
+        Log.d("Map Click", "map이 눌려짐")
+        vp_map_cardview.visibility = View.GONE
     }
 }

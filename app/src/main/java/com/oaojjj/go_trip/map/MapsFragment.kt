@@ -2,6 +2,7 @@ package com.oaojjj.go_trip.map
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
 import androidx.fragment.app.Fragment
@@ -33,7 +34,6 @@ import com.oaojjj.go_trip.map.marker.MapPagerFragmentStateAdapter
 import com.oaojjj.go_trip.map.marker.MarkerMyItem
 import com.oaojjj.go_trip.model.PostDTO
 import com.oaojjj.go_trip.util.AWSRetrofit
-import com.oaojjj.go_trip.util.RetrofitAPI
 import kotlinx.android.synthetic.main.fragment_maps.*
 import retrofit2.Call
 import retrofit2.Callback
@@ -51,8 +51,13 @@ class MapsFragment : Fragment(), GoogleMap.OnMapClickListener{
 
     private lateinit var mClusterManager: ClusterManager<MarkerMyItem>
     private lateinit var mLocation: LatLng
-    private var cardViewAdapter =  MapPagerFragmentStateAdapter()
+    private lateinit var cardViewAdapter:  MapPagerFragmentStateAdapter
     private var userPostList = ArrayList<PostDTO>()
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        cardViewAdapter = MapPagerFragmentStateAdapter(context)
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_maps, container, false)
@@ -97,9 +102,7 @@ class MapsFragment : Fragment(), GoogleMap.OnMapClickListener{
                     addItem(response.body() as ArrayList<PostDTO>)
                 }
             }
-
         })
-
     }
 
     @SuppressLint("MissingPermission")
@@ -138,7 +141,7 @@ class MapsFragment : Fragment(), GoogleMap.OnMapClickListener{
             // marker 의 위치를 이용해 cardView data set
             if(postItem.latitude == markerItem.position.latitude &&
                     postItem.longitude == markerItem.position.longitude){
-                cardViewAdapter.addItem(CardViewModel(R.drawable.koreanfood_basic, postItem.content))
+                cardViewAdapter.addItem(CardViewModel(postItem.image_path, postItem.content))
             }
         }
         cardViewAdapter.notifyDataSetChanged()
@@ -166,22 +169,15 @@ class MapsFragment : Fragment(), GoogleMap.OnMapClickListener{
             override fun onLocationResult(locationResult: LocationResult?) {
                 locationResult?.let {
                     for((i, location) in it.locations.withIndex()){
-                        Log.d("로케이션", "$i ${location.latitude}, ${location.longitude}")
-                        //setLastLocation(location)
                         if(initMap) {
                             initMap = false
                             initLocation(location)
                         }
-                        updateLocation(location)
                     }
                 }
             }
         }
         fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.myLooper())
-    }
-
-    private fun updateLocation(location: Location){
-
     }
 
     private fun initLocation(location: Location){
